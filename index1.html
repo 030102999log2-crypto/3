@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>일차방정식 최상급</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:#f0f4f8;min-height:100vh;padding-top:42px;}
+
+/* 타이머바 */
+#timerbar{position:fixed;top:0;left:0;right:0;height:42px;
+  background:linear-gradient(90deg,#7c3aed,#dc2626);
+  color:#fff;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;z-index:300;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.tb-l{font-size:13px;font-weight:700;opacity:.9;}
+.tb-m{font-size:20px;font-weight:900;letter-spacing:2px;}
+.tb-r{font-size:12px;font-weight:600;opacity:.85;}
+
+/* 헤더 */
+.hd{background:linear-gradient(135deg,#7c3aed,#dc2626);color:#fff;padding:16px 18px 14px;}
+.hd h1{font-size:18px;font-weight:900;margin-bottom:3px;}
+.hd p{font-size:12px;opacity:.8;}
+.prog-wrap{margin-top:10px;}
+.prog-lbl{display:flex;justify-content:space-between;font-size:12px;opacity:.9;margin-bottom:5px;}
+.prog-bar{background:rgba(255,255,255,.3);border-radius:99px;height:7px;}
+.prog-fill{background:#fff;height:100%;border-radius:99px;transition:width .4s;}
+
+/* 카드 */
+.qwrap{padding:12px;display:flex;flex-direction:column;gap:10px;padding-bottom:30px;}
+.qcard{background:#fff;border-radius:14px;border:1.5px solid #e2e8f0;overflow:hidden;
+  box-shadow:0 1px 8px rgba(0,0,0,.07);transition:border-color .2s;}
+.qcard.correct{border-color:#86efac;}
+.qcard.wrong-tried{border-color:#fca5a5;}
+.qcard.locked{opacity:.5;pointer-events:none;}
+.lock-badge{display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:12px;background:#f1f5f9;font-size:13px;color:#64748b;font-weight:600;}
+
+.qhead{display:flex;align-items:center;gap:8px;padding:12px 14px 0;}
+.qnum{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#dc2626);
+  color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qlv{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;
+  background:#ede9fe;color:#7c3aed;margin-left:auto;}
+
+.qbody{padding:10px 14px 14px;}
+.fire-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(90deg,#7c3aed,#dc2626);
+  color:#fff;font-size:11px;font-weight:700;padding:3px 11px;border-radius:20px;margin-bottom:8px;}
+
+/* 문제 박스 */
+.q-box{background:#faf5ff;border:1.5px solid #e9d5ff;border-radius:10px;
+  padding:12px 14px;margin-bottom:10px;}
+.q-main{font-family:'Courier New',monospace;font-size:16px;font-weight:800;
+  color:#6d28d9;line-height:1.7;}
+.q-sub{font-size:13.5px;color:#374151;line-height:1.75;margin-top:6px;}
+.q-sub b{color:#7c3aed;}
+
+.hint{font-size:12px;color:#64748b;background:#f8fafc;border-left:3px solid #c4b5fd;
+  padding:6px 10px;border-radius:0 6px 6px 0;margin-bottom:10px;line-height:1.65;}
+
+/* 입력 */
+.ans-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.ans-lbl{font-size:14px;font-weight:700;color:#374151;white-space:nowrap;}
+.ans-inp{border:1.5px solid #c7d2e8;border-radius:8px;padding:9px 12px;
+  font-size:16px;font-weight:700;color:#0f172a;width:110px;text-align:center;
+  outline:none;background:#fff;transition:border-color .15s;}
+.ans-inp:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12);}
+.ans-inp.ok{border-color:#22c55e;background:#f0fdf4;color:#166534;}
+.ans-inp.ng{border-color:#ef4444;background:#fef2f2;color:#991b1b;}
+.chkbtn{padding:10px 20px;font-size:14px;font-weight:800;border:none;
+  border-radius:8px;cursor:pointer;
+  background:linear-gradient(90deg,#7c3aed,#9333ea);color:#fff;white-space:nowrap;}
+.chkbtn:hover{opacity:.88;} .chkbtn:disabled{background:#c4b5fd;cursor:not-allowed;}
+
+/* 결과 */
+.result{margin-top:10px;padding:10px 13px;border-radius:8px;font-size:13px;
+  font-weight:600;display:none;line-height:1.7;}
+.result.ok{background:#f0fdf4;color:#166534;display:block;}
+.result.ng{background:#fef2f2;color:#991b1b;display:block;}
+
+/* 풀이 노트 */
+.note-toggle{display:flex;align-items:center;gap:5px;margin-top:11px;
+  font-size:12.5px;color:#64748b;cursor:pointer;user-select:none;width:fit-content;}
+.note-toggle .arr{transition:transform .2s;font-size:10px;}
+.note-toggle.open .arr{transform:rotate(90deg);}
+.note-area{display:none;margin-top:7px;}
+.note-area.open{display:block;}
+.note-toolbar{display:flex;gap:5px;padding:6px 8px;background:#fefce8;
+  border:1.5px solid #fde68a;border-bottom:none;border-radius:8px 8px 0 0;
+  align-items:center;flex-wrap:wrap;}
+.psz{width:26px;height:26px;border-radius:50%;border:2px solid #fde68a;
+  background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.psz.on{border-color:#f59e0b;background:#fef3c7;}
+.pdot{background:#0f172a;border-radius:50%;pointer-events:none;}
+.clr-btn2{padding:3px 9px;font-size:11px;font-weight:700;border:1px solid #fde68a;
+  border-radius:6px;background:#fff;cursor:pointer;color:#78350f;margin-left:auto;}
+.cbtn{width:20px;height:20px;border-radius:50%;border:2.5px solid #e2e8f0;cursor:pointer;}
+.cbtn.on{border-color:#374151;transform:scale(1.2);}
+.note-cv-wrap{background:#fffef7;border:1.5px solid #fde68a;border-radius:0 0 8px 8px;overflow:hidden;}
+.note-cv{display:block;cursor:crosshair;touch-action:none;width:100%;}
+
+/* 팝업 */
+#popup{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);
+  z-index:9999;align-items:center;justify-content:center;}
+.popup-box{background:#fff;border-radius:22px;padding:28px 24px 22px;
+  max-width:340px;width:92%;text-align:center;
+  box-shadow:0 10px 50px rgba(0,0,0,.3);animation:popIn .35s ease;}
+@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.pop-icon{font-size:60px;margin-bottom:6px;}
+.pop-title{font-size:21px;font-weight:900;color:#0f172a;margin-bottom:4px;}
+.pop-sub{font-size:13px;color:#64748b;margin-bottom:18px;}
+.pop-timebox{background:linear-gradient(135deg,#f5f3ff,#fce7f3);
+  border-radius:14px;padding:16px;margin-bottom:14px;}
+.pop-timelbl{font-size:12px;color:#64748b;margin-bottom:4px;}
+.pop-time{font-size:44px;font-weight:900;color:#7c3aed;letter-spacing:3px;}
+.pop-laps{text-align:left;background:#f8fafc;border-radius:10px;
+  padding:10px 14px;margin-bottom:16px;font-size:13px;line-height:2.1;
+  max-height:220px;overflow-y:auto;}
+.pop-laps span{font-weight:700;color:#7c3aed;}
+.pop-close{width:100%;padding:13px;font-size:15px;font-weight:800;
+  background:linear-gradient(90deg,#7c3aed,#dc2626);color:#fff;
+  border:none;border-radius:11px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- 타이머바 -->
+<div id="timerbar">
+  <div class="tb-l">⏱ 풀이 시간</div>
+  <div class="tb-m" id="tmr">00:00</div>
+  <div class="tb-r" id="tmr-stat">0 / 10 완료</div>
+</div>
+
+<!-- 헤더 -->
+<div class="hd">
+  <h1>🔥 일차방정식 최상급</h1>
+  <p>10문항 · 분수 / 소수 / 문장제 / 농도 / 속력 · 주관식</p>
+  <div class="prog-wrap">
+    <div class="prog-lbl">
+      <span id="pg-txt">0 / 10 풀이 완료</span>
+      <span id="pg-cor">정답 0개</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="pg-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div class="qwrap" id="qwrap"></div>
+
+<!-- 팝업 -->
+<div id="popup">
+  <div class="popup-box">
+    <div class="pop-icon">🏆</div>
+    <div class="pop-title">10문항 모두 완성!</div>
+    <div class="pop-sub">최상급 일차방정식을 모두 해결했어요!</div>
+    <div class="pop-timebox">
+      <div class="pop-timelbl">⏱ 총 소요 시간</div>
+      <div class="pop-time" id="pop-total">00:00</div>
+    </div>
+    <div class="pop-laps" id="pop-laps"></div>
+    <button class="pop-close" onclick="closePopup()">닫기</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  문제 데이터 (검산 완료)
+// ============================================================
+const QS = [
+  {
+    id:1,
+    title:'분수 방정식 ①',
+    q_eq:'x/4 − x/6 = 1',
+    q_sub:'',
+    ask:'x = ?',
+    ans:'12',
+    hint:'양변에 12(4와 6의 최소공배수)를 곱해 분수를 없애세요.',
+    sol:'양변 × 12: 3x − 2x = 12 → x = 12'
+  },
+  {
+    id:2,
+    title:'분수 방정식 ②',
+    q_eq:'(x+3)/2 − (x−1)/4 = 3',
+    q_sub:'',
+    ask:'x = ?',
+    ans:'5',
+    hint:'양변에 4(최소공배수)를 곱해 정수 방정식으로 바꾸세요.',
+    sol:'양변 × 4: 2(x+3) − (x−1) = 12 → 2x+6−x+1 = 12 → x = 5'
+  },
+  {
+    id:3,
+    title:'소수 방정식',
+    q_eq:'0.4x − 1.5 = 0.1x + 0.3',
+    q_sub:'',
+    ask:'x = ?',
+    ans:'6',
+    hint:'양변에 10을 곱해 소수를 없애세요.',
+    sol:'양변 × 10: 4x − 15 = x + 3 → 3x = 18 → x = 6'
+  },
+  {
+    id:4,
+    title:'복잡한 괄호 방정식',
+    q_eq:'5(x−2) − 2(x+1) = 2x − 4',
+    q_sub:'',
+    ask:'x = ?',
+    ans:'8',
+    hint:'양쪽 괄호를 먼저 풀고 x항끼리, 상수항끼리 각각 정리하세요.',
+    sol:'5x−10−2x−2 = 2x−4 → 3x−12 = 2x−4 → x = 8'
+  },
+  {
+    id:5,
+    title:'분수·괄호 혼합',
+    q_eq:'5(x−3)/2 = 2(x+1) − 1',
+    q_sub:'',
+    ask:'x = ?',
+    ans:'17',
+    hint:'양변에 2를 곱해 분수를 없애고 괄호를 푸세요.',
+    sol:'양변 × 2: 5(x−3) = 4(x+1) − 2 → 5x−15 = 4x+2 → x = 17'
+  },
+  {
+    id:6,
+    title:'문장제 ① — 연속수',
+    q_eq:'',
+    q_sub:'<b>연속하는 세 정수의 합이 75</b>이다.<br>세 수 중 가장 작은 수 x를 구하시오.',
+    ask:'x = ?',
+    ans:'24',
+    hint:'세 연속 정수: x, x+1, x+2 → x+(x+1)+(x+2) = 75',
+    sol:'3x + 3 = 75 → 3x = 72 → x = 24 (24, 25, 26)'
+  },
+  {
+    id:7,
+    title:'문장제 ② — 나이',
+    q_eq:'',
+    q_sub:'형의 나이는 동생보다 <b>4살 많다</b>.<br><b>3년 후</b>에 형의 나이가 동생 나이의 <b>2배</b>가 된다.<br>현재 동생의 나이 x를 구하시오.',
+    ask:'x = ?',
+    ans:'1',
+    hint:'현재: 형=x+4, 동생=x\n3년 후: (x+4+3) = 2(x+3)',
+    sol:'x+7 = 2x+6 → x = 1 (현재 동생 1살, 형 5살)'
+  },
+  {
+    id:8,
+    title:'문장제 ③ — 농도',
+    q_eq:'',
+    q_sub:'6%의 소금물 <b>x g</b>에 물 <b>40 g</b>을 더했더니<br><b>4%의 소금물</b>이 되었다.<br>x의 값을 구하시오.',
+    ask:'x = ?',
+    ans:'80',
+    hint:'소금의 양은 변하지 않아요.\n0.06x = 0.04(x + 40)',
+    sol:'0.06x = 0.04x + 1.6 → 0.02x = 1.6 → x = 80'
+  },
+  {
+    id:9,
+    title:'문장제 ④ — 속력·시간',
+    q_eq:'',
+    q_sub:'시속 <b>4 km</b>로 걷다가 시속 <b>12 km</b>로 뛰어서<br>총 <b>10 km</b>를 <b>2시간</b>에 이동했다.<br>걸은 거리 x(km)를 구하시오.',
+    ask:'x = ?',
+    ans:'7',
+    hint:'(걸은 시간) + (뛴 시간) = 2\nx/4 + (10−x)/12 = 2',
+    sol:'양변 × 12: 3x + (10−x) = 24 → 2x = 14 → x = 7 (km)'
+  },
+  {
+    id:10,
+    title:'문장제 ⑤ — 원가·이익',
+    q_eq:'',
+    q_sub:'어떤 물건의 원가에 <b>40% 이익</b>을 붙여 정가를 정했다.<br>정가에서 <b>700원</b>을 할인하여 팔았더니<br>원가보다 <b>980원의 이익</b>이 남았다.<br>원가 x(원)를 구하시오.',
+    ask:'x = ?',
+    ans:'4200',
+    hint:'정가 = 1.4x, 판매가 = 1.4x − 700\n이익 = 판매가 − 원가 = 980',
+    sol:'(1.4x − 700) − x = 980\n0.4x − 700 = 980\n0.4x = 1680 → x = 4200'
+  },
+];
+
+// ============================================================
+//  타이머
+// ============================================================
+const T={start:Date.now(),elapsed:0,running:true,iv:null,
+         done:new Array(10).fill(false),laps:[]};
+function pad(n){return String(n).padStart(2,'0');}
+function fmt(ms){const s=Math.floor(ms/1000);return pad(Math.floor(s/60))+':'+pad(s%60);}
+function tick(){if(!T.running)return;T.elapsed=Date.now()-T.start;document.getElementById('tmr').textContent=fmt(T.elapsed);}
+T.iv=setInterval(tick,500);tick();
+
+function markDone(id){
+  if(T.done[id-1])return;
+  T.done[id-1]=true;
+  T.laps.push({id,t:T.elapsed});
+  const n=T.done.filter(Boolean).length;
+  document.getElementById('tmr-stat').textContent=n+' / 10 완료';
+  if(n===10){T.running=false;clearInterval(T.iv);setTimeout(showPopup,500);}
+}
+
+// ============================================================
+//  상태
+// ============================================================
+const ST={};
+QS.forEach(q=>{ST[q.id]={ans:'',tried:false,correct:false};});
+const PEN={};
+const COLORS=['#0f172a','#dc2626','#7c3aed','#059669'];
+
+// ============================================================
+//  렌더링
+// ============================================================
+function render(){
+  const wrap=document.getElementById('qwrap');
+  wrap.innerHTML='';
+  QS.forEach((q,idx)=>{
+    const prev=QS[idx-1];
+    const locked=prev&&!ST[prev.id].correct;
+    wrap.appendChild(makeCard(q,locked));
+  });
+  updateProg();
+}
+
+function makeCard(q,locked){
+  const st=ST[q.id];
+  const div=document.createElement('div');
+  div.id='card-'+q.id;
+  div.className='qcard'+(st.correct?' correct':st.tried?' wrong-tried':'')+(locked?' locked':'');
+
+  if(locked){
+    div.innerHTML=`
+      <div class="qhead">
+        <div class="qnum">${q.id}</div>
+        <div style="flex:1;margin-left:8px;font-size:13px;font-weight:700;color:#374151">${q.title}</div>
+        <div class="qlv">최상</div>
+      </div>
+      <div class="lock-badge">🔒 이전 문제를 먼저 풀어야 열립니다</div>`;
+    return div;
+  }
+
+  const inpCls=st.tried?(st.correct?'ok':'ng'):'';
+  const dis=st.correct?'disabled':'';
+
+  let resultHTML='';
+  if(st.tried){
+    if(st.correct){
+      resultHTML=`<div class="result ok">✅ 정답입니다!<br><small style="font-weight:400;line-height:1.8">${q.sol.replace(/\n/g,'<br>')}</small></div>`;
+    } else {
+      resultHTML=`<div class="result ng">❌ 틀렸어요. 힌트를 참고해서 다시 풀어보세요!</div>`;
+    }
+  }
+
+  const eqHTML=q.q_eq?`<div class="q-main">${q.q_eq}</div>`:'';
+  const subHTML=q.q_sub?`<div class="q-sub">${q.q_sub}</div>`:'';
+
+  div.innerHTML=`
+    <div class="qhead">
+      <div class="qnum">${q.id}</div>
+      <div style="flex:1;margin-left:8px;font-size:13px;font-weight:700;color:#374151">${q.title}</div>
+      <div class="qlv">최상</div>
+    </div>
+    <div class="qbody">
+      <div class="fire-badge">🔥 최상급</div>
+      <div class="q-box">${eqHTML}${subHTML}</div>
+      <div class="hint">💡 힌트: ${q.hint.replace(/\n/g,'<br>')}</div>
+      <div class="ans-row">
+        <span class="ans-lbl">${q.ask.replace('?','')}</span>
+        <input class="ans-inp ${inpCls}" id="inp-${q.id}" type="text"
+          placeholder="정답 입력" ${dis} value="${st.ans}"
+          onkeydown="if(event.key==='Enter')check(${q.id})">
+        <button class="chkbtn" id="btn-${q.id}" onclick="check(${q.id})" ${dis}>확인</button>
+      </div>
+      ${resultHTML}
+      <div class="note-toggle" id="ntog-${q.id}" onclick="toggleNote(${q.id})">
+        <span class="arr">▶</span>&nbsp;✏️ 풀이 노트 (손글씨)
+      </div>
+      <div class="note-area" id="narea-${q.id}">
+        <div class="note-toolbar">
+          <span style="font-size:11px;color:#78350f;font-weight:600">굵기</span>
+          <div class="psz on" id="ps-${q.id}-2" onclick="setPen(${q.id},2)"><div class="pdot" style="width:4px;height:4px"></div></div>
+          <div class="psz" id="ps-${q.id}-5" onclick="setPen(${q.id},5)"><div class="pdot" style="width:8px;height:8px"></div></div>
+          <div class="psz" id="ps-${q.id}-9" onclick="setPen(${q.id},9)"><div class="pdot" style="width:13px;height:13px"></div></div>
+          <span style="font-size:11px;color:#78350f;font-weight:600;margin-left:6px">색</span>
+          <div class="cbtn on" id="cb-${q.id}-0" style="background:#0f172a" onclick="setColor(${q.id},0)"></div>
+          <div class="cbtn" id="cb-${q.id}-1" style="background:#dc2626" onclick="setColor(${q.id},1)"></div>
+          <div class="cbtn" id="cb-${q.id}-2" style="background:#7c3aed" onclick="setColor(${q.id},2)"></div>
+          <div class="cbtn" id="cb-${q.id}-3" style="background:#059669" onclick="setColor(${q.id},3)"></div>
+          <button class="clr-btn2" onclick="clearNote(${q.id})">🗑 지우기</button>
+        </div>
+        <div class="note-cv-wrap"><canvas class="note-cv" id="nc-${q.id}" height="150"></canvas></div>
+      </div>
+    </div>`;
+
+  setTimeout(()=>initNote(q.id),40);
+  return div;
+}
+
+// ============================================================
+//  정답 확인
+// ============================================================
+function check(id){
+  const q=QS.find(q=>q.id===id);
+  const inp=document.getElementById('inp-'+id);
+  const raw=inp.value.trim().replace(/\s/g,'');
+  if(!raw){inp.focus();return;}
+
+  const uNum=parseFloat(raw);
+  const aNum=parseFloat(q.ans);
+  const correct=(!isNaN(uNum)&&!isNaN(aNum))
+    ? Math.abs(uNum-aNum)<0.01
+    : raw===q.ans;
+
+  ST[id]={ans:raw,tried:true,correct};
+  if(correct) markDone(id);
+
+  const old=document.getElementById('card-'+id);
+  const nc=makeCard(q,false);
+  old.parentNode.replaceChild(nc,old);
+  initNote(id);
+  updateProg();
+
+  if(correct){
+    const idx=QS.findIndex(q=>q.id===id);
+    if(idx<QS.length-1){
+      const nextQ=QS[idx+1];
+      setTimeout(()=>{
+        const nextOld=document.getElementById('card-'+nextQ.id);
+        if(nextOld){
+          const newNext=makeCard(nextQ,false);
+          nextOld.parentNode.replaceChild(newNext,nextOld);
+          initNote(nextQ.id);
+          setTimeout(()=>{
+            newNext.scrollIntoView({behavior:'smooth',block:'start'});
+            document.getElementById('inp-'+nextQ.id)?.focus();
+          },200);
+        }
+      },300);
+    }
+  }
+}
+
+// ============================================================
+//  진행도
+// ============================================================
+function updateProg(){
+  const tot=QS.length;
+  const tried=Object.values(ST).filter(s=>s.tried).length;
+  const cor=Object.values(ST).filter(s=>s.correct).length;
+  document.getElementById('pg-txt').textContent=`${tried} / ${tot} 풀이 완료`;
+  document.getElementById('pg-cor').textContent=`정답 ${cor}개`;
+  document.getElementById('pg-fill').style.width=(tried/tot*100)+'%';
+}
+
+// ============================================================
+//  팝업
+// ============================================================
+function showPopup(){
+  document.getElementById('pop-total').textContent=fmt(T.elapsed);
+  const names={1:'분수①',2:'분수②',3:'소수',4:'괄호',5:'분수+괄호',
+               6:'연속수',7:'나이',8:'농도',9:'속력',10:'원가'};
+  let html='';
+  T.laps.forEach(l=>{
+    html+=`<span>[${l.id}번 ${names[l.id]}]</span> ${fmt(l.t)}<br>`;
+  });
+  document.getElementById('pop-laps').innerHTML=html;
+  document.getElementById('popup').style.display='flex';
+}
+function closePopup(){document.getElementById('popup').style.display='none';}
+
+// ============================================================
+//  손글씨 노트
+// ============================================================
+function initNote(id){
+  const cv=document.getElementById('nc-'+id);
+  if(!cv)return;
+  const W=cv.parentElement.clientWidth||300;
+  cv.width=W;cv.height=150;cv.style.width=W+'px';
+  PEN[id]={drawing:false,color:'#0f172a',size:2};
+  const ctx=cv.getContext('2d');
+  ctx.lineCap='round';ctx.lineJoin='round';
+  function pos(e){
+    const r=cv.getBoundingClientRect();
+    const t=e.touches?e.touches[0]:e;
+    return{x:(t.clientX-r.left)*(cv.width/r.width),y:(t.clientY-r.top)*(cv.height/r.height)};
+  }
+  function dn(e){e.preventDefault();const p=pos(e);PEN[id].drawing=true;ctx.beginPath();ctx.moveTo(p.x,p.y);}
+  function mv(e){e.preventDefault();if(!PEN[id].drawing)return;const p=pos(e);ctx.strokeStyle=PEN[id].color;ctx.lineWidth=PEN[id].size;ctx.lineTo(p.x,p.y);ctx.stroke();}
+  function up(e){e.preventDefault();PEN[id].drawing=false;}
+  cv.addEventListener('mousedown',dn);cv.addEventListener('mousemove',mv);
+  cv.addEventListener('mouseup',up);cv.addEventListener('mouseleave',up);
+  cv.addEventListener('touchstart',dn,{passive:false});
+  cv.addEventListener('touchmove',mv,{passive:false});
+  cv.addEventListener('touchend',up,{passive:false});
+}
+function setPen(id,sz){
+  if(PEN[id])PEN[id].size=sz;
+  [2,5,9].forEach(s=>document.getElementById('ps-'+id+'-'+s)?.classList.toggle('on',s===sz));
+}
+function setColor(id,idx){
+  if(PEN[id])PEN[id].color=COLORS[idx];
+  [0,1,2,3].forEach(i=>document.getElementById('cb-'+id+'-'+i)?.classList.toggle('on',i===idx));
+}
+function clearNote(id){
+  const cv=document.getElementById('nc-'+id);
+  if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);}
+}
+function toggleNote(id){
+  const a=document.getElementById('narea-'+id);
+  const t=document.getElementById('ntog-'+id);
+  const open=a.classList.toggle('open');
+  t.classList.toggle('open',open);
+  if(open)setTimeout(()=>initNote(id),30);
+}
+
+window.addEventListener('resize',()=>QS.forEach(q=>initNote(q.id)));
+render();
+</script>
+</body>
+</html>
